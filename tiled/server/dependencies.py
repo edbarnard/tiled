@@ -13,7 +13,6 @@ from ..media_type_registration import (
 )
 from ..query_registration import query_registry as default_query_registry
 from ..validation_registration import validation_registry as default_validation_registry
-from .authentication import get_current_principal, get_session_state
 from .core import NoEntry
 from .utils import filter_for_access, record_timing
 
@@ -59,9 +58,7 @@ def SecureEntry(scopes, structure_families=None):
     async def inner(
         path: str,
         request: Request,
-        principal: str = Depends(get_current_principal),
         root_tree: pydantic_settings.BaseSettings = Depends(get_root_tree),
-        session_state: dict = Depends(get_session_state),
     ):
         """
         Obtain a node in the tree from its path.
@@ -85,13 +82,11 @@ def SecureEntry(scopes, structure_families=None):
 
         # If the entry/adapter can take a session state, pass it in.
         # The entry/adapter may return itself or a different object.
-        if hasattr(entry, "with_session_state") and session_state:
-            entry = entry.with_session_state(session_state)
         # start at the root
         # filter and keep only what we are allowed to see from here
         entry = await filter_for_access(
             entry,
-            principal,
+            "",
             ["read:metadata"],
             request.state.metrics,
             path_parts_relative,
@@ -120,7 +115,7 @@ def SecureEntry(scopes, structure_families=None):
                         # filter and keep only what we are allowed to see from here
                         entry = await filter_for_access(
                             entry,
-                            principal,
+                            "",
                             ["read:metadata"],
                             request.state.metrics,
                             path_parts_relative,
@@ -131,7 +126,7 @@ def SecureEntry(scopes, structure_families=None):
             if access_policy is not None:
                 with record_timing(request.state.metrics, "acl"):
                     allowed_scopes = await access_policy.allowed_scopes(
-                        entry_with_access_policy, principal, path_parts_relative
+                        entry_with_access_policy, "", path_parts_relative
                     )
                     if not set(scopes).issubset(allowed_scopes):
                         if "read:metadata" not in allowed_scopes:

@@ -42,7 +42,6 @@ from ..media_type_registration import (
 from ..utils import SHARE_TILED_PATH, Conflicts, SpecialUsers, UnsupportedQueryType
 from ..validation_registration import validation_registry as default_validation_registry
 from . import schemas
-from .authentication import get_current_principal
 from .compression import CompressionMiddleware
 from .dependencies import (
     get_query_registry,
@@ -267,7 +266,6 @@ or via the environment variable TILED_SINGLE_USER_API_KEY.""",
             request: Request,
             # This dependency is here because it runs the code that moves
             # API key from the query parameter to a cookie (if it is valid).
-            principal=Security(get_current_principal, scopes=[]),
         ):
             return templates.TemplateResponse(
                 "index.html",
@@ -368,14 +366,8 @@ or via the environment variable TILED_SINGLE_USER_API_KEY.""",
             build_device_code_user_code_form_route,
             build_device_code_user_code_submit_route,
             build_handle_credentials_route,
-            oauth2_scheme,
         )
-
-        # For the OpenAPI schema, inject a OAuth2PasswordBearer URL.
-        first_provider = authentication["providers"][0]["provider"]
-        oauth2_scheme.model.flows.password.tokenUrl = (
-            f"/api/v1/auth/provider/{first_provider}/token"
-        )
+        
         # Authenticators provide Router(s) for their particular flow.
         # Collect them in the authentication_router.
         authentication_router = APIRouter()

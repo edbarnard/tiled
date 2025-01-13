@@ -31,7 +31,7 @@ from ..structures.core import Spec, StructureFamily
 from ..utils import ensure_awaitable, patch_mimetypes, path_from_uri
 from ..validation_registration import ValidationError
 from . import schemas
-from .authentication import Mode, get_authenticators, get_current_principal
+from .authentication import Mode, get_authenticators
 from .core import (
     DEFAULT_PAGE_SIZE,
     DEPTH_LIMIT,
@@ -76,7 +76,6 @@ async def about(
     query_registry=Depends(get_query_registry),
     # This dependency is here because it runs the code that moves
     # API key from the query parameter to a cookie (if it is valid).
-    principal=Security(get_current_principal, scopes=[]),
 ):
     # TODO The lazy import of entry modules and serializers means that the
     # lists of formats are not populated until they are first used. Not very
@@ -170,7 +169,6 @@ async def search(
     include_data_sources: bool = Query(False),
     entry: Any = SecureEntry(scopes=["read:metadata"]),
     query_registry=Depends(get_query_registry),
-    principal: str = Depends(get_current_principal),
     **filters,
 ):
     request.state.endpoint = "search"
@@ -745,7 +743,6 @@ async def get_container_full(
     entry=SecureEntry(
         scopes=["read:data"], structure_families={StructureFamily.container}
     ),
-    principal: str = Depends(get_current_principal),
     field: Optional[List[str]] = Query(None, min_length=1),
     format: Optional[str] = None,
     filename: Optional[str] = None,
@@ -775,7 +772,6 @@ async def post_container_full(
     entry=SecureEntry(
         scopes=["read:data"], structure_families={StructureFamily.container}
     ),
-    principal: str = Depends(get_current_principal),
     field: Optional[List[str]] = Body(None, min_length=1),
     format: Optional[str] = None,
     filename: Optional[str] = None,
@@ -852,7 +848,6 @@ async def node_full(
         scopes=["read:data"],
         structure_families={StructureFamily.table, StructureFamily.container},
     ),
-    principal: str = Depends(get_current_principal),
     field: Optional[List[str]] = Query(None, min_length=1),
     format: Optional[str] = None,
     filename: Optional[str] = None,
